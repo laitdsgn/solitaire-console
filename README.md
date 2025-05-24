@@ -1,10 +1,10 @@
 Solitaire Game in C# console
 
-### PL:
-## Jak uruchomiæ
+## PL:
+# Jak uruchomiæ
 
-### EN:
-## How to run
+## EN:
+# How to run
 
 
 
