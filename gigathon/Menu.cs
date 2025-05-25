@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace gigathon
 {
-     public class Menu
-     {
-        public string mode { get; private set; }
+    public class Menu
+    {
+        public string mode { get; private set; } // Tryb gry: "easy" lub "hard"
 
         string logotype = @"    ____               _                 
    / __ \____ ______  (_)___ _____  _____
@@ -19,6 +19,7 @@ namespace gigathon
                 /___/                    
 
 ";
+
         public void GenerateMenu()
         {
             Console.Clear();
@@ -30,16 +31,16 @@ namespace gigathon
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine("2. Trudny");
 
-
-            PickMode();
+            PickMode(); // Obsługa wyboru trudności
         }
 
         public void PickMode()
         {
-            
             var clickedKey = Console.ReadKey().Key;
+
             if (clickedKey == ConsoleKey.D1)
             {
+                // Wybrano tryb łatwy
                 Console.Clear();
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine("---------- Wybrano tryb łatwy ----------");
@@ -49,11 +50,11 @@ namespace gigathon
                 Console.WriteLine("\nKliknij Backspace aby cofnąć się do menu");
                 Console.ResetColor();
 
-                IsReadyToPlay();
+                IsReadyToPlay(); // Czeka na potwierdzenie gracza
             }
             else if (clickedKey == ConsoleKey.D2)
             {
-
+                // Wybrano tryb trudny
                 Console.Clear();
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("---------- Wybrano tryb trudny ----------");
@@ -67,40 +68,37 @@ namespace gigathon
             }
             else
             {
+                // Nieprawidłowy wybór – powrót do menu
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("Nieprawidłowy wybór, spróbuj ponownie.");
                 Console.ResetColor();
                 Thread.Sleep(500);
                 GenerateMenu();
-                return;
             }
-
-           
         }
 
-        
         public bool IsReadyToPlay()
         {
             var clickedKey = Console.ReadKey().Key;
+
             if (clickedKey == ConsoleKey.Enter)
             {
                 Console.Clear();
-                return true;
+                return true; // Gracz gotowy – rozpoczynamy grę
             }
             else if (clickedKey == ConsoleKey.Backspace)
             {
                 Console.Clear();
-                GenerateMenu();
+                GenerateMenu(); // Powrót do menu
                 return false;
-            } else if (clickedKey != ConsoleKey.Backspace && clickedKey != ConsoleKey.Enter ) {
+            }
+            else
+            {
+                // Każdy inny klawisz powoduje powrót do menu
                 Console.Clear();
                 GenerateMenu();
                 return false;
             }
-
-            return false;
         }
-
-        
     }
 }

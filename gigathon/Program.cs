@@ -4,44 +4,47 @@ using System.Linq;
 
 namespace gigathon
 {
+    // Enum dla kolorów kart
     public enum Suit
     {
-        Kier,    
-        Karo,  
-        Pik,    
-        Trefl      
+        Kier,
+        Karo,
+        Pik,
+        Trefl
     }
 
+    // Enum dla wartości kart
     public enum Rank
     {
         As = 1, Dwa, Trzy, Cztery, Pięc, Sześć, Siedem,
         Osiem, Dziewięć, Dziesięć, Walet, Królowa, Król
     }
 
-
-
+    // Klasa reprezentująca talię kart oraz logikę gry
     public class Karta
     {
-        const int MAX_KART = 52;
-        public List<string> karty = new List<string>();
-        public List<string> kartyRezerwowe = new List<string>(); // karty rezerwowe
-        public List<List<string>> kolumny = new List<List<string>>();
-        public string TrybTrudnosci { get; private set; }
+        const int MAX_KART = 52; // Całkowita liczba kart w talii
+
+        public List<string> karty = new List<string>(); // Główna talia kart
+        public List<string> kartyRezerwowe = new List<string>(); // Karty rezerwowe (pozostałe po rozdaniu)
+        public List<List<string>> kolumny = new List<List<string>>(); // 7 kolumn kart (typowe dla pasjansa)
+        public string TrybTrudnosci { get; private set; } // Tryb gry (easy/hard)
 
         public Karta(string tryb)
         {
             TrybTrudnosci = tryb;
-            GenerujKarty();
+            GenerujKarty(); // Tworzenie i tasowanie kart
         }
 
+        // Generuje pełną talię i losowo rozdaje karty do głównej talii i rezerwowych
         private void GenerujKarty()
         {
             List<string> wszystkieKarty = new List<string>();
 
             for (int i = 0; i < MAX_KART; i++)
             {
-                Suit kolor = (Suit)(i / 13);
-                Rank wartosc = (Rank)(i % 13 + 1);
+                Suit kolor = (Suit)(i / 13); // Obliczenie koloru
+                Rank wartosc = (Rank)(i % 13 + 1); // Obliczenie wartości karty
 
                 string symbol = kolor switch
                 {
@@ -63,15 +66,16 @@ namespace gigathon
                 }} {symbol}");
             }
 
-            
+            // Tasowanie kart
             Random rnd = new Random();
             wszystkieKarty = wszystkieKarty.OrderBy(x => rnd.Next()).ToList();
 
-            
+            // Pierwsze 28 kart trafia do gry, reszta jako rezerwowe
             karty = wszystkieKarty.Take(28).ToList();
             kartyRezerwowe = wszystkieKarty.Skip(28).ToList();
         }
 
+        // Dobiera jedną losową kartę z rezerwowych do wybranej kolumny
         public void DobierzKarteZRezerwowych(int indexDocelowy)
         {
             if (kartyRezerwowe.Count > 0)
@@ -80,8 +84,7 @@ namespace gigathon
                 int index = rnd.Next(kartyRezerwowe.Count);
                 string karta = kartyRezerwowe[index];
                 var cel = kolumny[indexDocelowy - 1];
-                cel.Add(karta); // dodaj na koniec docelowej
-                
+                cel.Add(karta);
                 kartyRezerwowe.RemoveAt(index);
             }
             else
@@ -90,14 +93,35 @@ namespace gigathon
             }
         }
 
+        // Dobiera 3 karty z rezerwowych do podanych kolumn
+        public void DobierzKartyZRezerwowych(List<int> indeksyDocelowe)
+        {
+            if (kartyRezerwowe.Count < indeksyDocelowe.Count)
+            {
+                Console.WriteLine("Za mało kart rezerwowych.");
+                return;
+            }
 
+            Random rnd = new Random();
 
+            foreach (int indexDocelowy in indeksyDocelowe)
+            {
+                int index = rnd.Next(kartyRezerwowe.Count);
+                string karta = kartyRezerwowe[index];
+                var cel = kolumny[indexDocelowy - 1];
+                cel.Add(karta);
+                kartyRezerwowe.RemoveAt(index);
+            }
+        }
+
+        // Tasowanie kart (używane przed rozdaniem)
         private void TasujKarty()
         {
             Random rnd = new Random();
             karty = karty.OrderBy(x => rnd.Next(karty.Count)).ToList();
         }
-        
+
+        // Przenosi kartę z jednej kolumny do innej
         public void PrzeniesKarte(int indexZrodlowy, int indexDocelowy)
         {
             if (indexZrodlowy < 1 || indexZrodlowy > kolumny.Count ||
@@ -116,11 +140,12 @@ namespace gigathon
                 return;
             }
 
-            string karta = zrodlo[zrodlo.Count - 1]; // ostatnia karta
-            zrodlo.RemoveAt(zrodlo.Count - 1);       // usuń ją ze źródła
-            cel.Add(karta);                          // dodaj na koniec docelowej
+            string karta = zrodlo[zrodlo.Count - 1]; // Pobierz ostatnią kartę
+            zrodlo.RemoveAt(zrodlo.Count - 1);       // Usuń ze źródła
+            cel.Add(karta);                          // Dodaj do celu
         }
 
+        // Rozkłada karty na 7 kolumn, każda kolejna z większą liczbą kart
         public void RozlozKarty()
         {
             TasujKarty();
@@ -141,10 +166,12 @@ namespace gigathon
             WyswietlKolumny(true);
         }
 
+        // Wyświetla układ kolumn i dostępne opcje sterowania
         public void WyswietlKolumny(bool displayAnnoucment)
         {
-            
-            Console.WriteLine("\nUkład kart do pasjansa:");
+            Console.ResetColor();
+            Console.WriteLine("\nUkład kart do pasjansa:\n");
+
             for (int i = 0; i < kolumny.Count; i++)
             {
                 Console.ForegroundColor = ConsoleColor.White;
@@ -153,22 +180,19 @@ namespace gigathon
                 {
                     if (j < kolumny[i].Count - 1)
                     {
-                        
-                        Console.Write("#");
-                    } else
+                        Console.Write("#"); // zakryta karta
+                    }
+                    else
                     {
-                        
-                       char ikonka = kolumny[i][j].ToString()[kolumny[i][j].Length - 1]; // ostatni znak
-                        switch (ikonka){
+                        // odkryta karta – ustaw kolor w zależności od symbolu
+                        char ikonka = kolumny[i][j].ToString()[kolumny[i][j].Length - 1];
+                        switch (ikonka)
+                        {
                             case '♥':
-                                Console.ForegroundColor = ConsoleColor.Red;
-                                break;
                             case '♦':
                                 Console.ForegroundColor = ConsoleColor.Red;
                                 break;
                             case '♠':
-                                Console.ForegroundColor = ConsoleColor.Cyan;
-                                break;
                             case '♣':
                                 Console.ForegroundColor = ConsoleColor.Cyan;
                                 break;
@@ -178,15 +202,16 @@ namespace gigathon
                         }
                         Console.Write(kolumny[i][j] + " ");
                     }
-                        
                 }
                 Console.WriteLine();
             }
+
             Console.ResetColor();
             Console.WriteLine("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
             if (displayAnnoucment)
             {
+                // Informacje sterujące i komunikaty
                 Menu menu = new Menu();
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("\nAby zmienić miejsce jakiejś odkrytej karty kliknij Backspace");
@@ -203,16 +228,13 @@ namespace gigathon
                 }
                 Console.ResetColor();
                 Console.WriteLine("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("\n\n\n\n\n\nAby zakończyć grę kliknij ESCAPE");
             }
-           
         }
-
     }
 
-
-
-
-
+    // Klasa główna uruchamiająca aplikację
     class Program
     {
         static void Main(string[] args)
@@ -224,26 +246,29 @@ namespace gigathon
             Menu menu = new Menu();
             menu.GenerateMenu();
 
-
             Karta karta = new Karta(menu.mode);
-            karta.RozlozKarty(); 
+            karta.RozlozKarty();
 
-
+            // Główna pętla gry
             while (true)
             {
-                var clickedKey = Console.ReadKey(true); 
+                var clickedKey = Console.ReadKey(true);
+
                 if (clickedKey.Key == ConsoleKey.Backspace)
                 {
+                    // Przenoszenie kart między kolumnami
                     Console.Clear();
                     karta.WyswietlKolumny(false);
                     Console.ForegroundColor = ConsoleColor.Magenta;
-                    Console.WriteLine("\n\nPodaj numer karty do zamiany: (pierwsza odsłonięta karta z kolumny 1-7)");
+                    Console.WriteLine("\n\nPodaj numer karty do zamiany (kolumna 1-7):");
                     string pozycja1 = Console.ReadLine();
-                    Console.WriteLine("\n\nPodaj pozycję gdzie karta ma się znaleźć (będzie pierwszą kartą w kolumnach 1-7)");
+                    Console.WriteLine("\n\nPodaj pozycję docelową (kolumna 1-7):");
                     Console.ResetColor();
                     string pozycja2 = Console.ReadLine();
 
-                    if (string.IsNullOrEmpty(pozycja1) || pozycja1.Contains(' ') || !int.TryParse(pozycja1, out _))
+                    // Walidacja danych wejściowych
+                    if (string.IsNullOrEmpty(pozycja1) || pozycja1.Contains(' ') || !int.TryParse(pozycja1, out _) ||
+                        string.IsNullOrEmpty(pozycja2) || pozycja2.Contains(' ') || !int.TryParse(pozycja2, out _))
                     {
                         Console.WriteLine("Nieprawidłowy format wejścia.");
                         Console.ForegroundColor = ConsoleColor.DarkRed;
@@ -252,75 +277,86 @@ namespace gigathon
                         continue;
                     }
 
-                    if (string.IsNullOrEmpty(pozycja2) || pozycja2.Contains(' ') || !int.TryParse(pozycja2, out _))
-                    {
-                        Console.WriteLine("Nieprawidłowy format wejścia.");
-                        Console.ForegroundColor = ConsoleColor.DarkRed;
-                        Console.WriteLine("\nAby ponowić kliknij Backspace");
-                        Console.ResetColor();
-                        continue;
-                    }
-
-                    int convertedIntPozycja1 = int.Parse(pozycja1 != null ? pozycja1 : "");
-                    int convertedIntPozycja2 = int.Parse(pozycja2 != null ? pozycja2 : "");
+                    int convertedIntPozycja1 = int.Parse(pozycja1);
+                    int convertedIntPozycja2 = int.Parse(pozycja2);
 
                     if (convertedIntPozycja1 < 1 || convertedIntPozycja1 > karta.kolumny.Count ||
                         convertedIntPozycja2 < 1 || convertedIntPozycja2 > karta.kolumny.Count)
                     {
                         Console.WriteLine("Nieprawidłowe numery kolumn.");
-                        Console.ForegroundColor = ConsoleColor.DarkRed;
-                        Console.WriteLine("\nAby ponowić kliknij Backspace");
-                        Console.ResetColor();
                         continue;
-                    } else
+                    }
+                    else
                     {
                         karta.PrzeniesKarte(convertedIntPozycja1, convertedIntPozycja2);
                         Console.Clear();
                         karta.WyswietlKolumny(true);
                     }
-                } else if(clickedKey.Key == ConsoleKey.Enter)
+                }
+                else if (clickedKey.Key == ConsoleKey.Enter)
                 {
-                    
+                    // Dobieranie kart z rezerwowych
                     Console.Clear();
                     karta.WyswietlKolumny(false);
                     Console.ForegroundColor = ConsoleColor.Magenta;
-                    Console.WriteLine("\n\nPodaj pozycję gdzie karta ma się znaleźć (będzie pierwszą kartą w kolumnach 1-7)");
-                    string pozycjaDobieranej = Console.ReadLine();
-                    int convertedPozycjaDobieranej;
 
-                    if (string.IsNullOrEmpty(pozycjaDobieranej) || pozycjaDobieranej.Contains(' ') || !int.TryParse(pozycjaDobieranej, out convertedPozycjaDobieranej))
+                    if (karta.TrybTrudnosci == "hard")
                     {
-                        Console.WriteLine("Nieprawidłowy format wejścia.");
-                        Console.ForegroundColor = ConsoleColor.DarkRed;
-                        Console.WriteLine("\nAby ponowić kliknij Enter");
-                        Console.ResetColor();
-                        continue;
+                        List<int> kolumnyDocelowe = new List<int>();
+
+                        for (int i = 1; i <= 3; i++)
+                        {
+                            Console.WriteLine($"\nPodaj numer kolumny docelowej dla karty {i} (1-7):");
+                            string input = Console.ReadLine();
+                            int index;
+
+                            if (string.IsNullOrEmpty(input) || !int.TryParse(input, out index) || index < 1 || index > karta.kolumny.Count)
+                            {
+                                Console.ForegroundColor = ConsoleColor.Red;
+                                Console.WriteLine("Nieprawidłowa kolumna. Przerwano dobieranie.");
+                                Console.ResetColor();
+                                break;
+                            }
+
+                            kolumnyDocelowe.Add(index);
+                        }
+
+                        if (kolumnyDocelowe.Count == 3)
+                        {
+                            karta.DobierzKartyZRezerwowych(kolumnyDocelowe);
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("\nPodaj numer kolumny, do której ma trafić dobrana karta (1-7):");
+                        string pozycjaDobieranej = Console.ReadLine();
+                        int convertedPozycjaDobieranej;
+
+                        if (string.IsNullOrEmpty(pozycjaDobieranej) || !int.TryParse(pozycjaDobieranej, out convertedPozycjaDobieranej)
+                            || convertedPozycjaDobieranej < 1 || convertedPozycjaDobieranej > karta.kolumny.Count)
+                        {
+                            Console.WriteLine("Nieprawidłowy numer kolumny.");
+                        }
+                        else
+                        {
+                            karta.DobierzKarteZRezerwowych(convertedPozycjaDobieranej);
+                        }
                     }
 
                     Console.Clear();
                     karta.WyswietlKolumny(true);
-                    
-                    if (convertedPozycjaDobieranej < 1 || convertedPozycjaDobieranej > karta.kolumny.Count)
-                    {
-                        Console.WriteLine("Nieprawidłowe numery kolumn.");
-                        Console.ForegroundColor = ConsoleColor.DarkRed;
-                        Console.WriteLine("\nAby ponowić kliknij Enter");
-                        Console.ResetColor();
-                    } else
-                    {
-                        karta.DobierzKarteZRezerwowych(convertedPozycjaDobieranej);
-                        Console.Clear();
-                        karta.WyswietlKolumny(true);
-                    }
                 }
                 else if (clickedKey.Key == ConsoleKey.Escape)
                 {
+                    // Wyjście z gry
+                    Console.Clear();
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine("Dziękujemy za grę! Do zobaczenia!");
+                    Console.ResetColor();
+                    Thread.Sleep(500);
                     break;
                 }
-                
             }
-            
         }
     }
-
 }
